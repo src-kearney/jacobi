@@ -42,7 +42,7 @@ double (*new)[1024];
 pthread_barrier_t mybarrier;
 bool converged = false;
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
     old = (double (*)[1024]) parse();
     new = (double (*)[1024]) parse();
@@ -53,7 +53,7 @@ int main(int argc, char **argv){
     pthread_barrier_init(&mybarrier, NULL, NOTH);
 
     barrier = bmaker;
-    for(int i = 0; i < NOTH; i++){
+    for(int i = 0; i < NOTH; i++) {
         sem_init(&barrier[i],0,0);
     }
 
@@ -65,15 +65,15 @@ int main(int argc, char **argv){
     exit(0);
 }
 
-void* jacobi(void *arg){
+void* jacobi(void *arg) {
     struct thread_st *p = arg;
 
     bool convergedCheck = false;
 
     //move, barrier, estimate, barrier, convergence, barrier, repeat
-    while(!converged){
+    while(!converged) {
 
-        for(int i = p->startRow; i < p->endRow; ++i){
+        for(int i = p->startRow; i < p->endRow; ++i) {
             for(int j = 1; j < 1023; ++j){
                 old[i][j] = new[i][j];
             }
@@ -82,7 +82,7 @@ void* jacobi(void *arg){
         pthread_barrier_wait(&mybarrier);
 
         //calculate approximation on new array
-        for(int i = p->startRow; i < p->endRow; ++i){
+        for(int i = p->startRow; i < p->endRow; ++i) {
             for(int j = 1; j < 1023; ++j){
                 new[i][j] = (old[i+1][j] + old[i-1][j] + old[i][j+1] + old[i][j-1])/4;
                 //old[i][j] = new[i][j];
@@ -91,7 +91,7 @@ void* jacobi(void *arg){
 
         pthread_barrier_wait(&mybarrier);
 
-        if(p->i == 0 && isConverged(old,new)){
+        if(p->i == 0 && isConverged(old,new)) {
             converged = true;
         }
 
@@ -106,8 +106,8 @@ bool isConverged(){
 
     double delta = 0;
 
-    for(int i = 0; i < 1024; ++i){
-        for(int j = 0; j < 1024; ++j){
+    for(int i = 0; i < 1024; ++i) {
+        for(int j = 0; j < 1024; ++j) {
             delta = fmax(delta, fabs(new[i][j]-old[i][j]));
         }
     }
@@ -116,7 +116,7 @@ bool isConverged(){
     return (delta < epsilon);
 }
 
-double (*parse())[1024]{
+double (*parse())[1024] {
     double (*arr)[1024] = malloc(sizeof(double)*1024*1024);
     FILE *fp;
     fp = fopen("input.mtx", "r");
@@ -127,9 +127,9 @@ double (*parse())[1024]{
     }
 
     double *val = malloc(sizeof(double));
-    for(int i = 0; i < 1024; i++){
-        for(int j = 0; j < 1024; j++){
-            if(fscanf(fp,"%lf",val) == -1){
+    for(int i = 0; i < 1024; i++) {
+        for(int j = 0; j < 1024; j++) {
+            if(fscanf(fp,"%lf",val) == -1) {
                 perror("fscanf err");
             }
             arr[i][j] = *val;
@@ -141,18 +141,18 @@ double (*parse())[1024]{
     return arr;
 }
 
-void createThreads(int NOTH){
+void createThreads(int NOTH) {
 
     pthread_t thds[NOTH];
     sem_init(&lock,0,1);
 
-    for(int i = 0; i < NOTH; i++){
+    for(int i = 0; i < NOTH; i++) {
         pthread_create (&thds[i], NULL,
                     jacobi,
                     mk_thread_st(i, NOTH));
     }
 
-    for(int i = 0; i < NOTH; i++){
+    for(int i = 0; i < NOTH; i++) {
         void* p;
         pthread_join(thds[i], &p);
         free(p);
@@ -160,14 +160,14 @@ void createThreads(int NOTH){
     sem_destroy(&lock);
 }
 
-struct thread_st* mk_thread_st(int i, int NOTH){
+struct thread_st* mk_thread_st(int i, int NOTH) {
     int th_rowStart = i*(1024/NOTH);
     int th_rowEnd = ((i+1)*(1024/NOTH))-1;
 
-    if(i == 0){
+    if(i == 0) {
         th_rowStart=1;
     }
-    if(i+1 == NOTH){
+    if(i+1 == NOTH) {
         th_rowEnd = 1023;
     }
 
@@ -186,7 +186,7 @@ struct thread_st* mk_thread_st(int i, int NOTH){
     return p;
 }
 
-void* thread_start(void *arg){
+void* thread_start(void *arg) {
     struct thread_st *p = arg;
 
     jacobi(p);
@@ -194,33 +194,33 @@ void* thread_start(void *arg){
     return p;
 }
 
-void barrier_func(int thdNum, int NOTH){
+void barrier_func(int thdNum, int NOTH) {
     sem_wait(&lock);
     thdsWait++;
     sem_post(&lock);
-    if(thdsWait < NOTH){
+    if(thdsWait < NOTH) {
         sem_wait(&barrier[thdNum]);
     }
     else{
     bcnt++;
     thdsWait = 0;
-    for(int j = 0; j < NOTH; j++){
+    for(int j = 0; j < NOTH; j++) {
         sem_post(&barrier[j]);
     }
     sem_wait(&barrier[thdNum]);
     }
 }
 
-void printArr(double (*arr)[1024]){
-    for(int i = 0; i < 1024; i++){
-        for(int j = 0; j < 1024; j++){
+void printArr(double (*arr)[1024]) {
+    for(int i = 0; i < 1024; i++) {
+        for(int j = 0; j < 1024; j++) {
             printf("i: %d, j: %d ",i,j);
             printf("%.10lf\n",arr[i][j]);
         }
     }
 }
 
-int findNOTH(){
+int findNOTH() {
     printf("Number of threads?\n");
     int *NOTHptr = malloc(sizeof(int));
     scanf("%d",NOTHptr);
